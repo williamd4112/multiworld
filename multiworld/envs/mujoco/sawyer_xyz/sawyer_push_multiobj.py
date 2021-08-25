@@ -356,6 +356,10 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
     def compute_reward(self, action, obs, info=None):
         r = -np.linalg.norm(obs['state_achieved_goal'] - obs['state_desired_goal'])
         return r
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        r = -np.linalg.norm(achieved_goal - desired_goal)
+        return r
 
     def compute_her_reward_np(self, ob, action, next_ob, goal, env_info=None):
         return self.compute_reward(ob, action, next_ob, goal, env_info=env_info)

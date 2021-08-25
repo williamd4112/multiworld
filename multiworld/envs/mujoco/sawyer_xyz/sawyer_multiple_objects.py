@@ -464,6 +464,10 @@ class MultiSawyerEnv(MultitaskEnv, SawyerXYZEnv):
         r = -np.linalg.norm(obs['state_achieved_goal'] - obs['state_desired_goal'], axis=1)
         return r
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        r = -np.linalg.norm(achieved_goal - desired_goal, axis=1)
+        return r
+
     def get_goal(self):
         return {
             'desired_goal': self._state_goal,

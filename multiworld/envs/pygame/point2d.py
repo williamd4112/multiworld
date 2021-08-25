@@ -200,6 +200,17 @@ class Point2DEnv(MultitaskEnv, Serializable):
             return -np.abs(achieved_goals - desired_goals)
         else:
             raise NotImplementedError()
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        d = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
+        if self.reward_type == "sparse":
+            return -(d > self.target_radius).astype(np.float32)
+        elif self.reward_type == "dense":
+            return -d
+        elif self.reward_type == 'vectorized_dense':
+            return -np.abs(achieved_goal - desired_goal)
+        else:
+            raise NotImplementedError()
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()

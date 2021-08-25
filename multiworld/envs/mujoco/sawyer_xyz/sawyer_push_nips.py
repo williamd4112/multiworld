@@ -323,6 +323,11 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         r = -np.linalg.norm(
             obs['state_achieved_goal'] - obs['state_desired_goal'])
         return r
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        r = -np.linalg.norm(
+                achieved_goal - desired_goal)
+        return r
 
     # REPLACING REWARD FN
     # def compute_reward(self, ob, action, next_ob, goal, env_info=None):

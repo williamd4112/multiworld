@@ -162,6 +162,28 @@ class SawyerDoorHookEnv(
         else:
             raise NotImplementedError("Invalid/no reward type.")
         return r
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        actual_angle = achieved_goal[:, -1]
+        goal_angle = desired_goal[:, -1]
+        pos = achieved_goal[:, :3]
+        goal_pos = desired_goal[:, :3]
+        angle_diff = np.abs(actual_angle - goal_angle)
+        pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
+        if self.reward_type == 'angle_diff_and_hand_distance':
+            r = - (
+                angle_diff * self.target_angle_scale
+                + pos_dist * self.target_pos_scale
+            )
+        elif self.reward_type == 'angle_difference':
+            r = - angle_diff * self.target_angle_scale
+
+        elif self.reward_type == 'hand_success':
+            r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
+                  self.indicator_threshold[1]).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
 
     def reset_model(self):
         if not self.reset_free:

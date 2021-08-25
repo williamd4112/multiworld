@@ -482,6 +482,16 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         distances = np.linalg.norm(ob_p - goal, axis=2)[:, 1:]
 
         return -distances
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        ob_p = achieved_goal.reshape(-1, self.num_cur_objects + 1, 2)
+        goal = desired_goal.reshape(-1, self.num_cur_objects + 1, 2)
+        # th = objects_present*ob_p != 0
+        # ob = ob_p[:, th[0][:, 0]]
+
+        distances = np.linalg.norm(ob_p - goal, axis=2)[:, 1:]
+
+        return -distances
 
     # def compute_reward(self, action, obs, info=None):
     #     r = -np.linalg.norm(obs['state_achieved_goal'] - obs['state_desired_goal'])

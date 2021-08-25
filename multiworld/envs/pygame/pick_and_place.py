@@ -357,6 +357,24 @@ class PickAndPlaceEnv(MultitaskEnv, Serializable):
             return -np.abs(achieved_goals - desired_goals)
         else:
             raise NotImplementedError()
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        if self.object_reward_only:
+            achieved_goals = achieved_goal[:, 2:]
+            desired_goals = desired_goal[:, 2:]
+        d = np.linalg.norm(achieved_goals - desired_goals, axis=-1)
+        if self.reward_type == "sparse":
+            return -(d > self.success_threshold * len(self._all_objects)
+                     ).astype(np.float32)
+        elif self.reward_type == "dense":
+            return -d
+        elif self.reward_type == "dense_l1":
+            return -np.linalg.norm(achieved_goals - desired_goals, axis=-1,
+                                   ord=1)
+        elif self.reward_type == 'vectorized_dense':
+            return -np.abs(achieved_goals - desired_goals)
+        else:
+            raise NotImplementedError()
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()

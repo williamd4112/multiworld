@@ -323,6 +323,47 @@ class SawyerPushAndReachXYZEnv(MultitaskEnv, SawyerXYZEnv):
             'state_desired_goal': goals,
         }
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        hand_pos = achieved_goal[:, :3]
+        puck_pos = achieved_goal[:, 3:]
+        hand_goals = desired_goal[:, :3]
+        puck_goals = desired_goal[:, 3:]
+
+        hand_distances = np.linalg.norm(hand_goals - hand_pos, ord=self.norm_order, axis=1)
+        puck_distances = np.linalg.norm(puck_goals - puck_pos, ord=self.norm_order, axis=1)
+        puck_zs = self.init_puck_z * np.ones((desired_goal.shape[0], 1))
+        touch_distances = np.linalg.norm(
+            hand_pos - np.hstack((puck_pos, puck_zs)),
+            ord=self.norm_order,
+            axis=1,
+        )
+
+        if self.reward_type == 'hand_distance':
+            r = -hand_distances
+        elif self.reward_type == 'hand_success':
+            r = -(hand_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'puck_distance':
+            r = -puck_distances
+        elif self.reward_type == 'puck_success':
+            r = -(puck_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'hand_and_puck_distance':
+            r = -(puck_distances + hand_distances)
+        elif self.reward_type == 'state_distance':
+            r = -np.linalg.norm(
+                achieved_goal - desired_goal,
+                ord=self.norm_order,
+                axis=1
+            )
+        elif self.reward_type == 'vectorized_state_distance':
+            r = -np.abs(achieved_goal - desired_goal)
+        elif self.reward_type == 'touch_distance':
+            r = -touch_distances
+        elif self.reward_type == 'touch_success':
+            r = -(touch_distances > self.indicator_threshold).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
+
     def compute_rewards(self, actions, obs):
         achieved_goals = obs['state_achieved_goal']
         desired_goals = obs['state_desired_goal']

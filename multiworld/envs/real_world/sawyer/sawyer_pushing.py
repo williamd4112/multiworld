@@ -29,6 +29,9 @@ class SawyerPushXYEnv(sawyer_pushing.SawyerPushXYEnv, MultitaskEnv):
 
     def compute_rewards(self, actions, obs):
         raise NotImplementedError('Use Image based reward')
+        
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        raise NotImplementedError('Use Image based reward')
 
     def _get_obs(self):
         achieved_goal = None

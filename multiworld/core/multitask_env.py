@@ -54,6 +54,12 @@ class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
         }
         return self.compute_rewards(actions, next_obs)[0]
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        '''
+        To integrate with gym more conveniently
+        '''
+        raise NotImplemented()
+
     def get_diagnostics(self, *args, **kwargs):
         """
         :param rollouts: List where each element is a dictionary describing a

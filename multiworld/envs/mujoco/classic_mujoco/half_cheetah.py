@@ -90,6 +90,16 @@ class HalfCheetahEnv(MujocoEnv, MultitaskEnv, Serializable):
             raise NotImplementedError("Invalid/no reward type.")
         return r
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        distances = np.linalg.norm(achieved_goal - desired_goal, axis=1)
+        if self.reward_type == 'vel_distance':
+            r = -distances
+        elif self.reward_type == 'vel_success':
+            r = -(distances > self.indicator_threshold).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
+
     def reset_model(self):
         qpos = self.init_qpos + self.np_random.uniform(low=-.1, high=.1, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.randn(self.model.nv) * .1

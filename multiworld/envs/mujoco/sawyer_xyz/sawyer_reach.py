@@ -184,6 +184,21 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
         else:
             raise NotImplementedError("Invalid/no reward type.")
         return r
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        hand_pos = achieved_goal
+        goals = desired_goal
+        hand_diff = hand_pos - goals
+        if self.reward_type == 'hand_distance':
+            r = -np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+        elif self.reward_type == 'vectorized_hand_distance':
+            r = -np.abs(hand_diff)
+        elif self.reward_type == 'hand_success':
+            r = -(np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+                  > self.indicator_threshold).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()

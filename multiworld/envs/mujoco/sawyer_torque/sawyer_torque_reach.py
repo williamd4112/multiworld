@@ -259,6 +259,18 @@ class SawyerReachTorqueEnv(MujocoEnv, Serializable, MultitaskEnv):
             raise NotImplementedError("Invalid/no reward type.")
         return r
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        hand_pos = achieved_goal
+        goals = desired_goal
+        distances = np.linalg.norm(hand_pos - goals, axis=1)
+        if self.reward_type == 'hand_distance':
+            r = -distances
+        elif self.reward_type == 'hand_success':
+            r = -(distances > self.indicator_threshold).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
+
     def get_env_state(self):
         joint_state = self.sim.get_state()
         goal = self._state_goal.copy()

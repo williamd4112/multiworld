@@ -337,6 +337,43 @@ class SawyerPushAndReachXYZDoublePuckEnv(MultitaskEnv, SawyerXYZEnv):
             'state_desired_goal': goals,
         }
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        hand_pos = achieved_goal[:, :3]
+        puck1_pos = achieved_goal[:, 3:5]
+        puck2_pos = achieved_goal[:, 5:7]
+        hand_goals = desired_goal[:, :3]
+        puck1_goals = desired_goal[:, 3:5]
+        puck2_goals = desired_goal[:, 5:7]
+
+        hand_distances = np.linalg.norm(hand_goals - hand_pos, ord=self.norm_order, axis=1)
+        puck1_distances = np.linalg.norm(puck1_goals - puck1_pos, ord=self.norm_order, axis=1)
+        puck2_distances = np.linalg.norm(puck2_goals - puck2_pos, ord=self.norm_order, axis=1)
+
+        if self.reward_type == 'hand_distance':
+            r = -hand_distances
+        elif self.reward_type == 'hand_success':
+            r = -(hand_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'puck1_distance':
+            r = -puck1_distances
+        elif self.reward_type == 'puck1_success':
+            r = -(puck1_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'puck2_distance':
+            r = -puck2_distances
+        elif self.reward_type == 'puck2_success':
+            r = -(puck2_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'state_distance':
+            r = -np.linalg.norm(
+                achieved_goal - desired_goal,
+                ord=self.norm_order,
+                axis=1
+            )
+        elif self.reward_type == 'vectorized_state_distance':
+            r = -np.abs(achieved_goal - desired_goal)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
+
+
     def compute_rewards(self, actions, obs):
         achieved_goals = obs['state_achieved_goal']
         desired_goals = obs['state_desired_goal']

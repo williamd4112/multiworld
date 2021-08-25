@@ -316,6 +316,41 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         }
         return sampled_goals
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        hand_pos = achieved_goal[:, :3]
+        obj_pos = achieved_goal[:, 3:]
+        hand_goals = desired_goal[:, :3]
+        obj_goals = desired_goal[:, 3:]
+
+        hand_distances = np.linalg.norm(hand_goals - hand_pos, axis=1)
+        obj_distances = np.linalg.norm(obj_goals - obj_pos, axis=1)
+        hand_and_obj_distances = hand_distances + obj_distances
+        touch_distances = np.linalg.norm(hand_pos - obj_pos, axis=1)
+        touch_and_obj_distances = touch_distances + obj_distances
+
+        if self.reward_type == 'hand_distance':
+            r = -hand_distances
+        elif self.reward_type == 'hand_success':
+            r = -(hand_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'obj_distance':
+            r = -obj_distances
+        elif self.reward_type == 'obj_success':
+            r = -(obj_distances > self.indicator_threshold).astype(float)
+        elif self.reward_type == 'hand_and_obj_distance':
+            r = -hand_and_obj_distances
+        elif self.reward_type == 'touch_and_obj_distance':
+            r = -touch_and_obj_distances
+        elif self.reward_type == 'hand_and_obj_success':
+            r = -(
+                hand_and_obj_distances < self.indicator_threshold
+            ).astype(float)
+        elif self.reward_type == 'touch_distance':
+            r = -touch_distances
+        elif self.reward_type == 'touch_success':
+            r = -(touch_distances > self.indicator_threshold).astype(float)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+        return r
 
     def compute_rewards(self, actions, obs):
         achieved_goals = obs['state_achieved_goal']

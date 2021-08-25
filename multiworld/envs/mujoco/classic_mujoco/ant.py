@@ -234,6 +234,9 @@ class AntFullPositionGoalEnv(AntEnv, GoalEnv, Serializable):
     def compute_reward(self, achieved_goal, desired_goal, info):
         return - np.linalg.norm(achieved_goal - desired_goal)
 
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        return self.compute_reward(achieved_goal, desired_goal, info)
+
     @property
     def goal(self):
         return self._goal
