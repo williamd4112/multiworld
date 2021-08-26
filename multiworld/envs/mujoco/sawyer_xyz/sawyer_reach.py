@@ -84,6 +84,7 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
             hand_distance_l1=hand_distance_l1,
             hand_distance_l2=hand_distance_l2,
             hand_success=float(hand_distance < self.indicator_threshold),
+            is_success=float(hand_distance < self.indicator_threshold),
         )
 
     def _set_goal_marker(self, goal):
