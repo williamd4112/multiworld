@@ -1,7 +1,11 @@
 import gym
+import numpy as np
 import abc
 from collections import OrderedDict
 
+def goal_distance(goal_a, goal_b):
+    assert goal_a.shape == goal_b.shape
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
     """
@@ -33,7 +37,7 @@ class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
         """
         pass
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def compute_rewards(self, actions, obs):
         """
         :param actions: Np array of actions
@@ -43,9 +47,30 @@ class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
 
         pass
 
+    def step(self, action):
+        '''
+        Do simulation before this
+        '''
+        ob = self._get_obs()
+        info = {'is_success': self._is_success(ob['achieved_goal'], self._state_goal)}
+        reward = self.compute_reward_gym(ob['achieved_goal'], self._state_goal, info)        
+        done = False
+        return ob, reward, done, info
+    
+    def compute_reward_gym(self, achieved_goal, desired_goal, info):
+        d = goal_distance(achieved_goal, desired_goal)
+        if self.reward_type == "sparse":
+            return -(d > self.distance_threshold).astype(np.float32)
+        else:
+            return -d
+
     def sample_goal(self):
         goals = self.sample_goals(1)
         return self.unbatchify_dict(goals, 0)
+
+    def _is_success(self, achieved_goal, desired_goal):
+        d = goal_distance(achieved_goal, desired_goal)
+        return (d < self.distance_threshold).astype(np.float32)
 
     def compute_reward(self, action, obs):
         actions = action[None]
@@ -53,12 +78,6 @@ class MultitaskEnv(gym.Env, metaclass=abc.ABCMeta):
             k: v[None] for k, v in obs.items()
         }
         return self.compute_rewards(actions, next_obs)[0]
-
-    def compute_reward_gym(self, achieved_goal, desired_goal, info):
-        '''
-        To integrate with gym more conveniently
-        '''
-        raise NotImplemented()
 
     def get_diagnostics(self, *args, **kwargs):
         """

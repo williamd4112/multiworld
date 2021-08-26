@@ -11,9 +11,10 @@ from multiworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
 class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
     def __init__(
             self,
-            reward_type='hand_distance',
+            reward_type='sparse',
             norm_order=1,
             indicator_threshold=0.06,
+            distance_threshold=0.06,
 
             fix_goal=False,
             fixed_goal=(0.15, 0.6, 0.3),
@@ -28,6 +29,7 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
         self.reward_type = reward_type
         self.norm_order = norm_order
         self.indicator_threshold = indicator_threshold
+        self.distance_threshold = distance_threshold
 
         self.fix_goal = fix_goal
         self.fixed_goal = np.array(fixed_goal)
@@ -54,11 +56,13 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
         self.do_simulation(np.array([1]))
         # The marker seems to get reset every time you do a simulation
         self._set_goal_marker(self._state_goal)
-        ob = self._get_obs()
-        reward = self.compute_reward(action, ob)
-        info = self._get_info()
-        done = False
-        return ob, reward, done, info
+        # ob = self._get_obs()
+        # # reward = self.compute_reward(action, ob)
+        # info = {'is_success': self._is_success(ob['achieved_goal'], self._state_goal)}
+        # reward = self.compute_reward(ob['achieved_goal'], self._state_goal, info)        
+        # done = False
+        # return ob, reward, done, info
+        return MultitaskEnv.step(self, action)
 
     def _get_obs(self):
         flat_obs = self.get_endeff_pos()
@@ -74,18 +78,18 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
             proprio_achieved_goal=flat_obs,
         )
 
-    def _get_info(self):
-        hand_diff = self._state_goal - self.get_endeff_pos()
-        hand_distance = np.linalg.norm(hand_diff, ord=self.norm_order)
-        hand_distance_l1 = np.linalg.norm(hand_diff, ord=1)
-        hand_distance_l2 = np.linalg.norm(hand_diff, ord=2)
-        return dict(
-            hand_distance=hand_distance,
-            hand_distance_l1=hand_distance_l1,
-            hand_distance_l2=hand_distance_l2,
-            hand_success=float(hand_distance < self.indicator_threshold),
-            is_success=float(hand_distance < self.indicator_threshold),
-        )
+    # def _get_info(self, ob):
+    #     hand_diff = self._state_goal - self.get_endeff_pos()
+    #     hand_distance = np.linalg.norm(hand_diff, ord=self.norm_order)
+    #     hand_distance_l1 = np.linalg.norm(hand_diff, ord=1)
+    #     hand_distance_l2 = np.linalg.norm(hand_diff, ord=2)
+    #     return dict(
+    #         hand_distance=hand_distance,
+    #         hand_distance_l1=hand_distance_l1,
+    #         hand_distance_l2=hand_distance_l2,
+    #         hand_success=float(hand_distance < self.indicator_threshold),
+    #         is_success=float(hand_distance < self.indicator_threshold),
+    #     )
 
     def _set_goal_marker(self, goal):
         """
@@ -169,37 +173,41 @@ class SawyerReachXYZEnv(SawyerXYZEnv, MultitaskEnv):
             'state_desired_goal': goals,
         }
 
-    def compute_rewards(self, actions, obs):
-        achieved_goals = obs['state_achieved_goal']
-        desired_goals = obs['state_desired_goal']
-        hand_pos = achieved_goals
-        goals = desired_goals
-        hand_diff = hand_pos - goals
-        if self.reward_type == 'hand_distance':
-            r = -np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
-        elif self.reward_type == 'vectorized_hand_distance':
-            r = -np.abs(hand_diff)
-        elif self.reward_type == 'hand_success':
-            r = -(np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
-                  > self.indicator_threshold).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    # def compute_rewards(self, actions, obs):
+    #     achieved_goals = obs['state_achieved_goal']
+    #     desired_goals = obs['state_desired_goal']
+    #     hand_pos = achieved_goals
+    #     goals = desired_goals
+    #     hand_diff = hand_pos - goals
+    #     if self.reward_type == 'hand_distance':
+    #         r = -np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+    #     elif self.reward_type == 'vectorized_hand_distance':
+    #         r = -np.abs(hand_diff)
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+    #               > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'sparse':
+    #         r = -(np.linalg.norm(achieved_goals - desired_goals, axis=-1) > self.indicator_threshold).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
     
-    def compute_reward_gym(self, achieved_goal, desired_goal, info):
-        hand_pos = achieved_goal
-        goals = desired_goal
-        hand_diff = hand_pos - goals
-        if self.reward_type == 'hand_distance':
-            r = -np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
-        elif self.reward_type == 'vectorized_hand_distance':
-            r = -np.abs(hand_diff)
-        elif self.reward_type == 'hand_success':
-            r = -(np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
-                  > self.indicator_threshold).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    # def compute_reward_gym(self, achieved_goal, desired_goal, info):
+    #     hand_pos = achieved_goal
+    #     goals = desired_goal
+    #     hand_diff = hand_pos - goals
+    #     if self.reward_type == 'hand_distance':
+    #         r = -np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+    #     elif self.reward_type == 'vectorized_hand_distance':
+    #         r = -np.abs(hand_diff)
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(np.linalg.norm(hand_diff, ord=self.norm_order, axis=1)
+    #               > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'sparse':
+    #         r = -(np.linalg.norm(achieved_goal - desired_goal, axis=-1) > self.indicator_threshold).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()

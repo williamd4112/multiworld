@@ -37,12 +37,15 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             mocap_low=(-0.1, 0.5, 0.0),
             mocap_high=(0.1, 0.7, 0.5),
             force_puck_in_goal_space=False,
+            distance_threshold=0.06
     ):
         self.quick_init(locals())
         self.reward_info = reward_info
+        self.reward_type = reward_info['type']
         self.randomize_goals = randomize_goals
         self._pos_action_scale = pos_action_scale
         self.hide_goal = hide_goal
+        self.distance_threshold = distance_threshold
 
         self.init_block_low = np.array(init_block_low)
         self.init_block_high = np.array(init_block_high)
@@ -150,25 +153,27 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
                 self.set_puck_xy(clipped)
         u = np.zeros(7)
         self.do_simulation(u, self.frame_skip)
-        obs = self._get_obs()
-        # reward = self.compute_reward(obs, u, obs, self._goal_xyxy)
-        reward = self.compute_reward(a, obs)
-        done = False
+        # obs = self._get_obs()
+        # # reward = self.compute_reward(obs, u, obs, self._goal_xyxy)
+        # reward = self.compute_reward(a, obs)
+        # done = False
 
-        hand_distance = np.linalg.norm(
-            self.get_hand_goal_pos() - self.get_endeff_pos()
-        )
-        puck_distance = np.linalg.norm(
-            self.get_puck_goal_pos() - self.get_puck_pos())
-        touch_distance = np.linalg.norm(
-            self.get_endeff_pos() - self.get_puck_pos())
-        info = dict(
-            hand_distance=hand_distance,
-            puck_distance=puck_distance,
-            touch_distance=touch_distance,
-            success=float(hand_distance + puck_distance < 0.06),
-        )
-        return obs, reward, done, info
+        # hand_distance = np.linalg.norm(
+        #     self.get_hand_goal_pos() - self.get_endeff_pos()
+        # )
+        # puck_distance = np.linalg.norm(
+        #     self.get_puck_goal_pos() - self.get_puck_pos())
+        # touch_distance = np.linalg.norm(
+        #     self.get_endeff_pos() - self.get_puck_pos())
+        # info = dict(
+        #     hand_distance=hand_distance,
+        #     puck_distance=puck_distance,
+        #     touch_distance=touch_distance,
+        #     success=float(hand_distance + puck_distance < 0.06),
+        #     is_success=reward < 0.06,
+        # )
+        # return obs, reward, done, info
+        return MultitaskEnv.step(self, a)
 
     def mocap_set_action(self, action):
         pos_delta = action[None]
@@ -312,22 +317,35 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.set_goal_xyxy(self._goal_xyxy)
         self.set_puck_xy(self.sample_puck_xy())
         self.reset_mocap_welds()
+        self._state_goal = self._goal_xyxy 
         return self._get_obs()
 
-    def compute_rewards(self, action, obs, info=None):
-        r = -np.linalg.norm(
-            obs['state_achieved_goal'] - obs['state_desired_goal'], axis=1)
-        return r
+    # def compute_rewards(self, action, obs, info=None):
+    #     if self.reward_info['type'] == 'state_distance':         
+    #         r = -np.linalg.norm(
+    #                 obs['state_achieved_goal'] - obs['state_desired_goal'], axis=-1)
+    #     elif self.reward_info['type'] == 'success':
+    #         r = -(np.linalg.norm(
+    #                 obs['state_achieved_goal'] - obs['state_desired_goal'], axis=-1) > 0.06).astype(float)
+    #     return r
 
-    def compute_reward(self, action, obs, info=None):
-        r = -np.linalg.norm(
-            obs['state_achieved_goal'] - obs['state_desired_goal'])
-        return r
+    # def compute_reward(self, action, obs, info=None):
+    #     if self.reward_info['type'] == 'state_distance':         
+    #         r = -np.linalg.norm(
+    #                 obs['state_achieved_goal'] - obs['state_desired_goal'], axis=-1)
+    #     elif self.reward_info['type'] == 'success':
+    #         r = -(np.linalg.norm(
+    #                 obs['state_achieved_goal'] - obs['state_desired_goal'], axis=-1) > 0.06).astype(float)
+    #     return r
     
-    def compute_reward_gym(self, achieved_goal, desired_goal, info):
-        r = -np.linalg.norm(
-                achieved_goal - desired_goal)
-        return r
+    # def compute_reward_gym(self, achieved_goal, desired_goal, info):
+    #     if self.reward_info['type'] == 'state_distance':         
+    #         r = -np.linalg.norm(
+    #                 achieved_goal - desired_goal, axis=-1)
+    #     elif self.reward_info['type'] == 'success':
+    #         r = -(np.linalg.norm(
+    #                 achieved_goal - desired_goal, axis=-1) > 0.06).astype(float)
+    #     return r
 
     # REPLACING REWARD FN
     # def compute_reward(self, ob, action, next_ob, goal, env_info=None):

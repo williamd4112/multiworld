@@ -150,7 +150,8 @@ def register_reaching_envs():
             'bg_color': 'black',
             'images_are_rgb': True,
             'render_onscreen': False,
-            'show_goal': False,
+            'render_target': True,
+            'show_goal': True,
             'get_image_base_render_size': (48, 48),
         },
     )
@@ -175,6 +176,7 @@ def register_reaching_envs():
             'randomize_position_on_reset': False,
             'fixed_goal': (0, 3),
             'get_image_base_render_size': (48, 48),
+            'show_goal': True,
         },
     )
     register(

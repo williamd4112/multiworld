@@ -28,6 +28,7 @@ class SawyerDoorEnv(
         action_reward_scale=0,
         reward_type='angle_difference',
         indicator_threshold=(.02, .03),
+        distance_threshold = 0.03,
         fix_goal=False,
         fixed_goal=(0, .45, .12, -.25),
         reset_free=False,
@@ -54,6 +55,7 @@ class SawyerDoorEnv(
 
         self.reward_type = reward_type
         self.indicator_threshold = indicator_threshold
+        self.distance_threshold = distance_threshold
 
         self.fix_goal = fix_goal
         self.fixed_goal = np.array(fixed_goal)
@@ -95,11 +97,12 @@ class SawyerDoorEnv(
         u = np.zeros(8)
         u[7] = 1
         self.do_simulation(u, self.frame_skip)
-        info = self._get_info()
-        ob = self._get_obs()
-        reward = self.compute_reward(action, ob)
-        done = False
-        return ob, reward, done, info
+        # info = self._get_info()
+        # ob = self._get_obs()
+        # reward = self.compute_reward(action, ob)
+        # done = False
+        # return ob, reward, done, info
+        return MultitaskEnv.step(self, action)
 
     def _get_obs(self):
         pos = self.get_endeff_pos()
@@ -138,51 +141,51 @@ class SawyerDoorEnv(
     def endeff_id(self):
         return self.model.body_names.index('leftclaw')
 
-    def compute_rewards(self, actions, obs):
-        achieved_goals = obs['state_achieved_goal']
-        desired_goals = obs['state_desired_goal']
-        actual_angle = achieved_goals[:, -1]
-        goal_angle = desired_goals[:, -1]
-        pos = achieved_goals[:, :3]
-        goal_pos = desired_goals[:, :3]
-        angle_diff = np.abs(actual_angle - goal_angle)
-        pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
-        if self.reward_type == 'angle_diff_and_hand_distance':
-            r = - (
-                angle_diff * self.target_angle_scale
-                + pos_dist * self.target_pos_scale
-            )
-        elif self.reward_type == 'angle_difference':
-            r = - angle_diff * self.target_angle_scale
+    # def compute_rewards(self, actions, obs):
+    #     achieved_goals = obs['state_achieved_goal']
+    #     desired_goals = obs['state_desired_goal']
+    #     actual_angle = achieved_goals[:, -1]
+    #     goal_angle = desired_goals[:, -1]
+    #     pos = achieved_goals[:, :3]
+    #     goal_pos = desired_goals[:, :3]
+    #     angle_diff = np.abs(actual_angle - goal_angle)
+    #     pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
+    #     if self.reward_type == 'angle_diff_and_hand_distance':
+    #         r = - (
+    #             angle_diff * self.target_angle_scale
+    #             + pos_dist * self.target_pos_scale
+    #         )
+    #     elif self.reward_type == 'angle_difference':
+    #         r = - angle_diff * self.target_angle_scale
 
-        elif self.reward_type == 'hand_success':
-            r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
-                  self.indicator_threshold[1]).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
+    #               self.indicator_threshold[1]).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
     
-    def compute_reward_gym(self, achieved_goal, desired_goal, info):
-        actual_angle = achieved_goal[:, -1]
-        goal_angle = desired_goal[:, -1]
-        pos = achieved_goal[:, :3]
-        goal_pos = desired_goal[:, :3]
-        angle_diff = np.abs(actual_angle - goal_angle)
-        pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
-        if self.reward_type == 'angle_diff_and_hand_distance':
-            r = - (
-                angle_diff * self.target_angle_scale
-                + pos_dist * self.target_pos_scale
-            )
-        elif self.reward_type == 'angle_difference':
-            r = - angle_diff * self.target_angle_scale
+    # def compute_reward_gym(self, achieved_goal, desired_goal, info):
+    #     actual_angle = achieved_goal[:, -1]
+    #     goal_angle = desired_goal[:, -1]
+    #     pos = achieved_goal[:, :3]
+    #     goal_pos = desired_goal[:, :3]
+    #     angle_diff = np.abs(actual_angle - goal_angle)
+    #     pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
+    #     if self.reward_type == 'angle_diff_and_hand_distance':
+    #         r = - (
+    #             angle_diff * self.target_angle_scale
+    #             + pos_dist * self.target_pos_scale
+    #         )
+    #     elif self.reward_type == 'angle_difference':
+    #         r = - angle_diff * self.target_angle_scale
 
-        elif self.reward_type == 'hand_success':
-            r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
-                  self.indicator_threshold[1]).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
+    #               self.indicator_threshold[1]).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
 
     def reset_model(self):
         if not self.reset_free:

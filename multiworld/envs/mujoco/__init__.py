@@ -12,14 +12,14 @@ def register_mujoco_envs():
         return
     REGISTERED = True
     LOGGER.info("Registering multiworld mujoco gym environments")
-    register_classic_mujoco_envs()
-    register_sawyer_envs()
+    # register_classic_mujoco_envs()
+    # register_sawyer_envs()
+    register_sawyer_sparse_envs()
 
 
 def register_sawyer_envs():
     register_canonical_sawyer_envs()
     register_development_sawyer_envs()
-
 
 def register_canonical_sawyer_envs():
     register(
@@ -71,6 +71,281 @@ def register_canonical_sawyer_envs():
         )
     )
 
+def register_sawyer_sparse_reach():
+    '''
+    Reaching
+    '''
+    from multiworld.envs.mujoco.cameras import (
+        sawyer_init_camera_zoomed_in
+    )
+    register(
+        id='SawyerReachXYZEnv-v1',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz.sawyer_reach:SawyerReachXYZEnv',
+        tags={
+            'git-commit-hash': 'bea5de',
+            'author': 'murtaza'
+        },
+        kwargs={
+            'hide_goal_markers': True,
+            'norm_order': 2,
+            'reward_type': 'sparse'
+        },
+    )
+
+def register_sawyer_sparse_push():
+    '''
+    Pushing
+    '''
+    register(
+        id='SawyerPushAndReachEnvEasy-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_and_reach_env:SawyerPushAndReachXYEnv',
+        tags={
+            'git-commit-hash': 'ddd73dc',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            goal_low=(-0.15, 0.4, 0.02, -.1, .45),
+            goal_high=(0.15, 0.7, 0.02, .1, .65),
+            puck_low=(-.1, .45),
+            puck_high=(.1, .65),
+            hand_low=(-0.15, 0.4, 0.02),
+            hand_high=(0.15, .7, 0.02),
+            norm_order=2,
+            xml_path='sawyer_xyz/sawyer_push_puck.xml',
+            reward_type='sparse',
+            reset_free=False,
+            clamp_puck_on_step=True,
+        )
+    )
+
+    register(
+        id='SawyerPushAndReachEnvMedium-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_and_reach_env:SawyerPushAndReachXYEnv',
+        tags={
+            'git-commit-hash': 'ddd73dc',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            goal_low=(-0.2, 0.35, 0.02, -.15, .4),
+            goal_high=(0.2, 0.75, 0.02, .15, .7),
+            puck_low=(-.15, .4),
+            puck_high=(.15, .7),
+            hand_low=(-0.2, 0.35, 0.05),
+            hand_high=(0.2, .75, 0.3),
+            norm_order=2,
+            xml_path='sawyer_xyz/sawyer_push_puck.xml',
+            reward_type='sparse',
+            reset_free=False,
+            clamp_puck_on_step=True,            
+        )
+    )
+
+    register(
+        id='SawyerPushAndReachEnvHard-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_and_reach_env:SawyerPushAndReachXYEnv',
+        tags={
+            'git-commit-hash': 'ddd73dc',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            goal_low=(-0.25, 0.3, 0.02, -.2, .35),
+            goal_high=(0.25, 0.8, 0.02, .2, .75),
+            puck_low=(-.2, .35),
+            puck_high=(.2, .75),
+            hand_low=(-0.25, 0.3, 0.02),
+            hand_high=(0.25, .8, 0.02),
+            norm_order=2,
+            xml_path='sawyer_xyz/sawyer_push_puck.xml',
+            reward_type='sparse',
+            reset_free=False,
+            clamp_puck_on_step=True,            
+        )
+    )
+
+    register(
+        id='SawyerPushAndReachArenaEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_and_reach_env:SawyerPushAndReachXYEnv',
+        tags={
+            'git-commit-hash': 'dea1627',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            goal_low=(-0.25, 0.3, 0.02, -.2, .4),
+            goal_high=(0.25, 0.875, 0.02, .2, .8),
+            puck_low=(-.4, .2),
+            puck_high=(.4, 1),
+            hand_low=(-0.28, 0.3, 0.05),
+            hand_high=(0.28, 0.9, 0.3),
+            norm_order=2,
+            xml_path='sawyer_xyz/sawyer_push_puck_arena.xml',
+            reward_type='sparse',
+            reset_free=False,
+        )
+    )
+
+    register(
+        id='SawyerPushNIPS-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_nips:SawyerPushAndReachXYEasyEnv',
+        tags={
+            'git-commit-hash': 'bede25d',
+            'author': 'ashvin',
+        },
+        kwargs=dict(
+            hide_goal=False,
+            reward_info=dict(
+                type="sparse",
+            ),
+        )
+
+    )
+
+    register(
+        id='SawyerPushNIPSHarder-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_nips:SawyerPushAndReachXYHarderEnv',
+        tags={
+            'git-commit-hash': 'b5cac93',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            hide_goal=False,
+            reward_info=dict(
+                type="sparse",
+            ),
+        )
+
+    )
+
+def register_sawyer_sparse_pick_and_place():
+    '''
+    Pick-and-place
+    '''
+    register(
+        id='SawyerPickupEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.1, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.2),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
+            reward_type='sparse',
+        )
+    )
+
+    register(
+        id='SawyerPickupEnvYZ-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place:SawyerPickAndPlaceEnvYZ',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.1, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.2),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
+            reward_type='sparse',
+        )
+    )
+
+
+    register(
+        id='SawyerPickupTallEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.1, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.3),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
+            reward_type='sparse',
+        )
+    )
+
+    register(
+        id='SawyerPickupWideEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.2, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.2),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
+            reward_type='sparse',
+        )
+    ) 
+
+    register(
+        id='SawyerPickupTallWideEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.2, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.3),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
+            reward_type='sparse',
+        )
+    )
+
+def register_sawyer_sparse_door():
+    '''
+    Door
+    '''
+    register(
+        id='SawyerDoorEnv-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_door_hook:SawyerDoorHookEnv',
+        tags={
+            'git-commit-hash': '15b48d5',
+            'author': 'murtaza',
+        },
+        kwargs=dict(
+            goal_low=(-0.1, 0.45, 0.1, 0),
+            goal_high=(0.05, 0.65, .25, .83),
+            hand_low=(-0.1, 0.45, 0.1),
+            hand_high=(0.05, 0.65, .25),
+            max_angle=.83,
+            xml_path='sawyer_xyz/sawyer_door_pull_hook.xml',
+            reward_type='sparse',
+            reset_free=False,
+        )
+    )
+
+def register_sawyer_sparse_envs():
+    register_sawyer_sparse_reach()
+    register_sawyer_sparse_push()
+    register_sawyer_sparse_pick_and_place()
+    register_sawyer_sparse_door()
+    
 
 def register_development_sawyer_envs():
     from multiworld.envs.mujoco.cameras import (

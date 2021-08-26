@@ -40,7 +40,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
             show_goal=True,
             pointmass_color="blue",
             bg_color="black",
-            wall_color="white",
+            wall_color="red",
             **kwargs
     ):
         if walls is None:
@@ -403,7 +403,7 @@ class Point2DEnv(MultitaskEnv, Serializable):
                 wall.endpoint1[0] - wall.endpoint4[0],
                 - wall.endpoint1[1] + wall.endpoint2[1],
                 Color(self._wall_color),
-                thickness=0,
+                thickness=int(np.ceil(self.wall_thickness))
             )
         drawer.render()
 

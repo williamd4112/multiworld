@@ -7,7 +7,7 @@ from multiworld.envs.env_util import get_stat_in_paths, \
 from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
 from multiworld.envs.mujoco.cameras import sawyer_pick_and_place_camera
-
+from tqdm import *
 
 class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
     def __init__(
@@ -17,6 +17,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
 
             reward_type='hand_and_obj_distance',
             indicator_threshold=0.06,
+            distance_threshold=0.06,
 
             obj_init_positions=((0, 0.6, 0.02),),
             random_init=False,
@@ -57,6 +58,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         self.random_init = random_init
         self.p_obj_in_hand = p_obj_in_hand
         self.indicator_threshold = indicator_threshold
+        self.distance_threshold = distance_threshold
 
         self.obj_init_z = obj_init_positions[0][2]
         self.obj_init_positions = np.array(obj_init_positions)
@@ -153,11 +155,12 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         self.last_obj_pos = new_obj_pos.copy()
         # The marker seems to get reset every time you do a simulation
         self._set_goal_marker(self._state_goal)
-        ob = self._get_obs()
-        reward = self.compute_reward(action, ob)
-        info = self._get_info()
-        done = False
-        return ob, reward, done, info
+        # ob = self._get_obs()
+        # reward = self.compute_reward(action, ob)
+        # info = self._get_info()
+        # done = False
+        # return ob, reward, done, info
+        return MultitaskEnv.step(self, action)
 
     def _get_obs(self):
         e = self.get_endeff_pos()
@@ -179,42 +182,42 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             proprio_desired_goal=hand_goal,
         )
 
-    def _get_info(self):
-        hand_goal = self._state_goal[:3]
-        obj_goal = self._state_goal[3:]
-        hand_distance = np.linalg.norm(hand_goal - self.get_endeff_pos())
-        obj_distance = np.linalg.norm(obj_goal - self.get_obj_pos())
-        touch_distance = np.linalg.norm(
-            self.get_endeff_pos() - self.get_obj_pos()
-        )
+    # def _get_info(self):
+    #     hand_goal = self._state_goal[:3]
+    #     obj_goal = self._state_goal[3:]
+    #     hand_distance = np.linalg.norm(hand_goal - self.get_endeff_pos())
+    #     obj_distance = np.linalg.norm(obj_goal - self.get_obj_pos())
+    #     touch_distance = np.linalg.norm(
+    #         self.get_endeff_pos() - self.get_obj_pos()
+    #     )
 
-        if self.reward_type == 'hand_success':
-            is_success = float(hand_distance < self.indicator_threshold)        
-        elif self.reward_type == 'obj_success':
-            is_success = float(obj_distance < self.indicator_threshold)        
-        elif self.reward_type == 'hand_and_obj_success':
-            is_success = float(
-                hand_distance+obj_distance < self.indicator_threshold
-            )       
-        elif self.reward_type == 'touch_success':
-            is_success = float(touch_distance < self.indicator_threshold)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
+    #     if self.reward_type == 'hand_success':
+    #         is_success = float(hand_distance < self.indicator_threshold)        
+    #     elif self.reward_type == 'obj_success':
+    #         is_success = float(obj_distance < self.indicator_threshold)        
+    #     elif self.reward_type == 'hand_and_obj_success':
+    #         is_success = float(
+    #             hand_distance+obj_distance < self.indicator_threshold
+    #         )       
+    #     elif self.reward_type == 'touch_success':
+    #         is_success = float(touch_distance < self.indicator_threshold)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
 
-        return dict(
-            hand_distance=hand_distance,
-            obj_distance=obj_distance,
-            hand_and_obj_distance=hand_distance+obj_distance,
-            touch_distance=touch_distance,
-            hand_success=float(hand_distance < self.indicator_threshold),
-            obj_success=float(obj_distance < self.indicator_threshold),
-            hand_and_obj_success=float(
-                hand_distance+obj_distance < self.indicator_threshold
-            ),
-            total_pickups=self.train_pickups if self.cur_mode == 'train' else self.eval_pickups,
-            touch_success=float(touch_distance < self.indicator_threshold),
-            is_success=is_success
-        )
+    #     return dict(
+    #         hand_distance=hand_distance,
+    #         obj_distance=obj_distance,
+    #         hand_and_obj_distance=hand_distance+obj_distance,
+    #         touch_distance=touch_distance,
+    #         hand_success=float(hand_distance < self.indicator_threshold),
+    #         obj_success=float(obj_distance < self.indicator_threshold),
+    #         hand_and_obj_success=float(
+    #             hand_distance+obj_distance < self.indicator_threshold
+    #         ),
+    #         total_pickups=self.train_pickups if self.cur_mode == 'train' else self.eval_pickups,
+    #         touch_success=float(touch_distance < self.indicator_threshold),
+    #         is_success=is_success
+    #     )
 
     def get_obj_pos(self):
         return self.data.get_body_xpos('obj').copy()
@@ -331,79 +334,79 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         }
         return sampled_goals
 
-    def compute_reward_gym(self, achieved_goal, desired_goal, info):
-        hand_pos = achieved_goal[:, :3]
-        obj_pos = achieved_goal[:, 3:]
-        hand_goals = desired_goal[:, :3]
-        obj_goals = desired_goal[:, 3:]
+    # def compute_reward_gym(self, achieved_goal, desired_goal, info):
+    #     hand_pos = achieved_goal[:, :3]
+    #     obj_pos = achieved_goal[:, 3:]
+    #     hand_goals = desired_goal[:, :3]
+    #     obj_goals = desired_goal[:, 3:]
 
-        hand_distances = np.linalg.norm(hand_goals - hand_pos, axis=1)
-        obj_distances = np.linalg.norm(obj_goals - obj_pos, axis=1)
-        hand_and_obj_distances = hand_distances + obj_distances
-        touch_distances = np.linalg.norm(hand_pos - obj_pos, axis=1)
-        touch_and_obj_distances = touch_distances + obj_distances
+    #     hand_distances = np.linalg.norm(hand_goals - hand_pos, axis=1)
+    #     obj_distances = np.linalg.norm(obj_goals - obj_pos, axis=1)
+    #     hand_and_obj_distances = hand_distances + obj_distances
+    #     touch_distances = np.linalg.norm(hand_pos - obj_pos, axis=1)
+    #     touch_and_obj_distances = touch_distances + obj_distances
 
-        if self.reward_type == 'hand_distance':
-            r = -hand_distances
-        elif self.reward_type == 'hand_success':
-            r = -(hand_distances > self.indicator_threshold).astype(float)
-        elif self.reward_type == 'obj_distance':
-            r = -obj_distances
-        elif self.reward_type == 'obj_success':
-            r = -(obj_distances > self.indicator_threshold).astype(float)
-        elif self.reward_type == 'hand_and_obj_distance':
-            r = -hand_and_obj_distances
-        elif self.reward_type == 'touch_and_obj_distance':
-            r = -touch_and_obj_distances
-        elif self.reward_type == 'hand_and_obj_success':
-            r = -(
-                hand_and_obj_distances < self.indicator_threshold
-            ).astype(float)
-        elif self.reward_type == 'touch_distance':
-            r = -touch_distances
-        elif self.reward_type == 'touch_success':
-            r = -(touch_distances > self.indicator_threshold).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    #     if self.reward_type == 'hand_distance':
+    #         r = -hand_distances
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(hand_distances > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'obj_distance':
+    #         r = -obj_distances
+    #     elif self.reward_type == 'obj_success':
+    #         r = -(obj_distances > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'hand_and_obj_distance':
+    #         r = -hand_and_obj_distances
+    #     elif self.reward_type == 'touch_and_obj_distance':
+    #         r = -touch_and_obj_distances
+    #     elif self.reward_type == 'hand_and_obj_success':
+    #         r = -(
+    #             hand_and_obj_distances < self.indicator_threshold
+    #         ).astype(float)
+    #     elif self.reward_type == 'touch_distance':
+    #         r = -touch_distances
+    #     elif self.reward_type == 'touch_success':
+    #         r = -(touch_distances > self.indicator_threshold).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
 
-    def compute_rewards(self, actions, obs):
-        achieved_goals = obs['state_achieved_goal']
-        desired_goals = obs['state_desired_goal']
-        hand_pos = achieved_goals[:, :3]
-        obj_pos = achieved_goals[:, 3:]
-        hand_goals = desired_goals[:, :3]
-        obj_goals = desired_goals[:, 3:]
+    # def compute_rewards(self, actions, obs):
+    #     achieved_goals = obs['state_achieved_goal']
+    #     desired_goals = obs['state_desired_goal']
+    #     hand_pos = achieved_goals[:, :3]
+    #     obj_pos = achieved_goals[:, 3:]
+    #     hand_goals = desired_goals[:, :3]
+    #     obj_goals = desired_goals[:, 3:]
 
-        hand_distances = np.linalg.norm(hand_goals - hand_pos, axis=1)
-        obj_distances = np.linalg.norm(obj_goals - obj_pos, axis=1)
-        hand_and_obj_distances = hand_distances + obj_distances
-        touch_distances = np.linalg.norm(hand_pos - obj_pos, axis=1)
-        touch_and_obj_distances = touch_distances + obj_distances
+    #     hand_distances = np.linalg.norm(hand_goals - hand_pos, axis=1)
+    #     obj_distances = np.linalg.norm(obj_goals - obj_pos, axis=1)
+    #     hand_and_obj_distances = hand_distances + obj_distances
+    #     touch_distances = np.linalg.norm(hand_pos - obj_pos, axis=1)
+    #     touch_and_obj_distances = touch_distances + obj_distances
 
-        if self.reward_type == 'hand_distance':
-            r = -hand_distances
-        elif self.reward_type == 'hand_success':
-            r = -(hand_distances > self.indicator_threshold).astype(float)
-        elif self.reward_type == 'obj_distance':
-            r = -obj_distances
-        elif self.reward_type == 'obj_success':
-            r = -(obj_distances > self.indicator_threshold).astype(float)
-        elif self.reward_type == 'hand_and_obj_distance':
-            r = -hand_and_obj_distances
-        elif self.reward_type == 'touch_and_obj_distance':
-            r = -touch_and_obj_distances
-        elif self.reward_type == 'hand_and_obj_success':
-            r = -(
-                hand_and_obj_distances < self.indicator_threshold
-            ).astype(float)
-        elif self.reward_type == 'touch_distance':
-            r = -touch_distances
-        elif self.reward_type == 'touch_success':
-            r = -(touch_distances > self.indicator_threshold).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
-        return r
+    #     if self.reward_type == 'hand_distance':
+    #         r = -hand_distances
+    #     elif self.reward_type == 'hand_success':
+    #         r = -(hand_distances > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'obj_distance':
+    #         r = -obj_distances
+    #     elif self.reward_type == 'obj_success':
+    #         r = -(obj_distances > self.indicator_threshold).astype(float)
+    #     elif self.reward_type == 'hand_and_obj_distance':
+    #         r = -hand_and_obj_distances
+    #     elif self.reward_type == 'touch_and_obj_distance':
+    #         r = -touch_and_obj_distances
+    #     elif self.reward_type == 'hand_and_obj_success':
+    #         r = -(
+    #             hand_and_obj_distances < self.indicator_threshold
+    #         ).astype(float)
+    #     elif self.reward_type == 'touch_distance':
+    #         r = -touch_distances
+    #     elif self.reward_type == 'touch_success':
+    #         r = -(touch_distances > self.indicator_threshold).astype(float)
+    #     else:
+    #         raise NotImplementedError("Invalid/no reward type.")
+    #     return r
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()
@@ -539,7 +542,7 @@ def corrected_state_goals(pickup_env, pickup_env_goals):
     pickup_env._state_goal = np.zeros(6)
     goals = pickup_env_goals.copy()
     num_goals = len(list(goals.values())[0])
-    for idx in range(num_goals):
+    for idx in tqdm(range(num_goals)):
         pickup_env.set_to_goal(
             {'state_desired_goal': goals['state_desired_goal'][idx]}
         )
