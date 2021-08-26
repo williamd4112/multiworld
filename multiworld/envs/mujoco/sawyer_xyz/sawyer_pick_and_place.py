@@ -187,6 +187,20 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         touch_distance = np.linalg.norm(
             self.get_endeff_pos() - self.get_obj_pos()
         )
+
+        if self.reward_type == 'hand_success':
+            is_success = float(hand_distance < self.indicator_threshold)        
+        elif self.reward_type == 'obj_success':
+            is_success = float(obj_distance < self.indicator_threshold)        
+        elif self.reward_type == 'hand_and_obj_success':
+            is_success = float(
+                hand_distance+obj_distance < self.indicator_threshold
+            )       
+        elif self.reward_type == 'touch_success':
+            is_success = float(touch_distance < self.indicator_threshold)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
+
         return dict(
             hand_distance=hand_distance,
             obj_distance=obj_distance,
@@ -199,6 +213,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             ),
             total_pickups=self.train_pickups if self.cur_mode == 'train' else self.eval_pickups,
             touch_success=float(touch_distance < self.indicator_threshold),
+            is_success=is_success
         )
 
     def get_obj_pos(self):

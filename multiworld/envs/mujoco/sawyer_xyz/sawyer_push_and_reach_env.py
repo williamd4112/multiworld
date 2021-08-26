@@ -173,6 +173,15 @@ class SawyerPushAndReachXYZEnv(MultitaskEnv, SawyerXYZEnv):
         state_distance = np.linalg.norm(state_diff, ord=self.norm_order)
         state_distance_l1 = np.linalg.norm(state_diff, ord=1)
         state_distance_l2 = np.linalg.norm(state_diff, ord=2)
+        
+        if self.reward_type == 'hand_success':
+            is_success = float(hand_distance < self.indicator_threshold)
+        elif self.reward_type == 'puck_success':
+            is_success = float(puck_distance < self.indicator_threshold)        
+        elif self.reward_type == 'touch_success':
+            is_success = float(touch_distance < self.indicator_threshold)
+        else:
+            raise NotImplementedError("Invalid/no reward type.")
 
         return dict(
             hand_distance=hand_distance,
@@ -197,6 +206,7 @@ class SawyerPushAndReachXYZEnv(MultitaskEnv, SawyerXYZEnv):
             ),
             touch_success=float(touch_distance < self.indicator_threshold),
             state_success=float(state_distance < self.indicator_threshold),
+            is_success=is_success
         )
 
     def get_puck_pos(self):

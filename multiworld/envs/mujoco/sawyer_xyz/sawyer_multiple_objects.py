@@ -76,10 +76,14 @@ class MultiSawyerEnv(MultitaskEnv, SawyerXYZEnv):
         hand_low = np.array([-0.31, 0.24, 0.0]),
         hand_high = np.array([0.32, 0.7, 0.14]),
         env_seed = 0,
+        reward_type='distance',
+        indicator_threshold=0.03,
     ):
         self.quick_init(locals())
 
         self.seed(env_seed)
+        self.reward_type = reward_type
+        self.indicator_threshold = indicator_threshold
 
         base_filename = asset_base_path + filename
 
@@ -403,14 +407,17 @@ class MultiSawyerEnv(MultitaskEnv, SawyerXYZEnv):
             print("finger force", finger_force)
 
         ob = self._get_obs(finger_force)
-        reward = -np.linalg.norm(ob['state_achieved_goal'] - ob['state_desired_goal'])
+        if self.reward_type == 'distance':
+            reward = -np.linalg.norm(ob['state_achieved_goal'] - ob['state_desired_goal'])
+        elif self.reward_type == 'success':
+            reward = (np.linalg.norm(ob['state_achieved_goal'] - ob['state_desired_goal']) > self.indicator_threshold).astype(float)
 
         done = False
-        info = self._get_info()
+        info = self._get_info(ob)
 
         return ob, reward, done, info
 
-    def _get_info(self):
+    def _get_info(self, ob):
         infos = dict()
         for i in range(self.num_objects):
             x = i * self.goal_dim_per_object
@@ -419,6 +426,7 @@ class MultiSawyerEnv(MultitaskEnv, SawyerXYZEnv):
             obj_goal = self._state_goal[x:y]
             name = self._object_names[i] + '_distance'
             infos[name] = np.linalg.norm(obj_pos - obj_goal)
+        infos['is_success'] = (np.linalg.norm(ob['state_achieved_goal'] - ob['state_desired_goal']) > self.indicator_threshold).astype(float)
         return infos
 
     def _post_step(self):

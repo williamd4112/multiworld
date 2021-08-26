@@ -158,6 +158,7 @@ class SawyerReachTorqueEnv(MujocoEnv, Serializable, MultitaskEnv):
         return dict(
             hand_distance=hand_distance,
             hand_success=float(hand_distance < self.indicator_threshold),
+            is_success=float(hand_distance < self.indicator_threshold),
         )
 
     def get_endeff_pos(self):

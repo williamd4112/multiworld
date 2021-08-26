@@ -76,6 +76,7 @@ class HalfCheetahEnv(MujocoEnv, MultitaskEnv, Serializable):
         info['vel_distance'] = xvel_error
         info['vel_difference'] =np.abs(xvel - desired_xvel)
         info['vel_success'] = (xvel_error < self.indicator_threshold).astype(float)
+        info['is_success'] = info['vel_success']
         return info
 
     def compute_rewards(self, actions, obs):

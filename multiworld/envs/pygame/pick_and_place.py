@@ -283,6 +283,7 @@ class PickAndPlaceEnv(MultitaskEnv, Serializable):
         info = {
             'distance_to_target_cursor': distance_to_target,
             'success_cursor': is_success,
+            'is_success': is_success,
         }
         for i, obj in enumerate(self.objects):
             obj_distance = obj.distance_to_target()

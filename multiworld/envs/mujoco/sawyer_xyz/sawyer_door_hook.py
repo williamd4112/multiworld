@@ -121,6 +121,7 @@ class SawyerDoorHookEnv(
     def _get_info(self):
         angle_diff = np.abs(self.get_door_angle() - self._state_goal[-1])[0]
         hand_dist = np.linalg.norm(self.get_endeff_pos() - self._state_goal[:3])
+
         info = dict(
             angle_difference=angle_diff,
             angle_success=(angle_diff < self.indicator_threshold[0]).astype(
@@ -128,7 +129,9 @@ class SawyerDoorHookEnv(
             hand_distance=hand_dist,
             hand_success=(hand_dist < self.indicator_threshold[1]).astype(
                 float),
-            total_distance=angle_diff + hand_dist
+            total_distance=angle_diff + hand_dist,
+            is_success=(hand_dist < self.indicator_threshold[1]).astype(
+                float)
         )
         return info
 
